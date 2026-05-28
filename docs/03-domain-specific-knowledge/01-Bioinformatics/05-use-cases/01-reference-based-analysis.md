@@ -84,7 +84,7 @@ bwa mem -t 8 reference_genome.fasta \
     > aligned_reads.sam
 
 # Step 3: Convert SAM to BAM and sort
-samtools view -bS aligned_reads.sam | samtools sort -o aligned_reads.sorted.bam
+samtools view -b aligned_reads.sam | samtools sort -o aligned_reads.sorted.bam
 samtools index aligned_reads.sorted.bam
 
 # Step 4: Mark duplicate reads
@@ -94,7 +94,7 @@ picard MarkDuplicates \
     METRICS_FILE=metrics.txt
 
 # Step 5: Call variants using bcftools
-bcftools mpileup -f reference_genome.fasta aligned_reads.dedup.bam | \
+bcftools mpileup -Ou -f reference_genome.fasta aligned_reads.dedup.bam | \
     bcftools call -mv -Oz -o variants.vcf.gz
 
 # Step 6: Filter variants

@@ -26,7 +26,7 @@ The result of the assembly process is typically stored in FASTA format, containi
 - Contig length distributions
 - Coverage statistics
 - Measures of completeness
-- N50 values (median contig length)
+- N50 values (length at which 50% of the total assembly is in contigs of this size or longer)
 
 ### **Genome Annotation**
 

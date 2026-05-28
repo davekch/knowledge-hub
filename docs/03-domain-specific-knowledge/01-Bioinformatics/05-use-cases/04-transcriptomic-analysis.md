@@ -112,8 +112,8 @@ for sample in sample1 sample2 sample3 control1 control2 control3; do
         --runThreadN 8
 done
 
-# Step 5: Count reads per gene
-featureCounts -p -T 8 \
+# Step 5: Count reads per gene (paired-end fragment counting)
+featureCounts -p --countReadPairs -T 8 \
     -a annotation.gtf \
     -o counts.txt \
     aligned/*_Aligned.sortedByCoord.out.bam
@@ -467,7 +467,7 @@ A complete RNA-seq analysis produces:
 
 | Step | Samples | CPU Cores | RAM | Storage | Time |
 |------|---------|-----------|-----|---------|------|
-| Alignment (STAR) | 6 samples | 8 per sample | 32 GB | ~100 GB | 2-4 hours |
+| Alignment (STAR) | 6 samples | 8 per sample | 32-38 GB | ~100 GB | 2-4 hours |
 | Quantification (Salmon) | 6 samples | 8 per sample | 8 GB | ~50 GB | 30-60 min |
 | DESeq2 analysis | Any | 1-4 | 8-16 GB | Minimal | 10-30 min |
 

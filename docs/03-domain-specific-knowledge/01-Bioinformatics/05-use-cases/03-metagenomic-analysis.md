@@ -87,24 +87,25 @@ bowtie2 -x host_genome_index \
     -2 metagenome_R2.fastq.gz \
     --un-conc-gz clean_reads.fastq.gz \
     -S host_mapped.sam
+# Note: bowtie2 outputs clean_reads.1.fastq.gz and clean_reads.2.fastq.gz
 
 # Step 3: Taxonomic profiling with Kraken2
-kraken2 --db minikraken2_v2 \
-    --paired clean_reads_1.fastq.gz clean_reads_2.fastq.gz \
+kraken2 --db k2_standard \
+    --paired clean_reads.1.fastq.gz clean_reads.2.fastq.gz \
     --threads 16 \
     --report kraken_report.txt \
     --output kraken_output.txt
 
 # Generate visualization with Bracken
-bracken -d minikraken2_v2 \
+bracken -d k2_standard \
     -i kraken_report.txt \
     -o bracken_species.txt \
     -r 150 \
     -l S
 
 # Step 4: Metagenomic assembly
-megahit -1 clean_reads_1.fastq.gz \
-    -2 clean_reads_2.fastq.gz \
+megahit -1 clean_reads.1.fastq.gz \
+    -2 clean_reads.2.fastq.gz \
     -o assembly_output \
     --min-contig-len 1000 \
     -t 16
@@ -112,18 +113,23 @@ megahit -1 clean_reads_1.fastq.gz \
 # Step 5: Binning - map reads back to assembly
 bowtie2-build assembly_output/final.contigs.fa assembly_index
 bowtie2 -x assembly_index \
-    -1 clean_reads_1.fastq.gz \
-    -2 clean_reads_2.fastq.gz \
+    -1 clean_reads.1.fastq.gz \
+    -2 clean_reads.2.fastq.gz \
     -S mapped_reads.sam \
     --threads 16
 
 # Convert to BAM and sort
-samtools view -bS mapped_reads.sam | samtools sort -o mapped_reads.sorted.bam
+samtools view -b mapped_reads.sam | samtools sort -o mapped_reads.sorted.bam
 samtools index mapped_reads.sorted.bam
+
+# Generate depth file for MetaBAT2
+jgi_summarize_bam_contig_depths \
+    --outputDepth depth.txt \
+    mapped_reads.sorted.bam
 
 # Bin contigs using MetaBAT2
 metabat2 -i assembly_output/final.contigs.fa \
-    -a mapped_reads.sorted.bam \
+    -a depth.txt \
     -o bins/bin \
     -t 16 \
     -m 1500
@@ -136,7 +142,10 @@ checkm lineage_wf bins/ checkm_output/ \
     -f checkm_results.txt
 
 # Step 7: Functional profiling with HUMAnN
-humann --input clean_reads_1.fastq.gz \
+# HUMAnN requires paired-end reads concatenated into a single file
+cat clean_reads.1.fastq.gz clean_reads.2.fastq.gz > clean_reads_concat.fastq.gz
+
+humann --input clean_reads_concat.fastq.gz \
     --output humann_output \
     --threads 16
 
